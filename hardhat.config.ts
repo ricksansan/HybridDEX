@@ -1,8 +1,8 @@
-const { HardhatUserConfig } = require("hardhat/config");
+require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
-const config: HardhatUserConfig = {
+const config = {
   solidity: "0.8.19",
   networks: {
     sepolia: {

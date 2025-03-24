@@ -1,19 +1,31 @@
+const { ethers } = require("hardhat");
+
 async function deployHybridPool() {
-  const hardhat = require("hardhat");
-  const { ethers } = hardhat;
+  // Sepolia test ağındaki adresler
+  const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"; // ETH için özel adres
+  const USDC_ADDRESS = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"; // Sepolia USDC
 
-  const WETH_ADDRESS = "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6"; // Sepolia WETH
-  const USDC_ADDRESS = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"; // Sepolia USDC
-
+  // HybridPool kontratını deploy et
   const HybridPool = await ethers.getContractFactory("HybridPool");
-  const pool = await HybridPool.deploy(WETH_ADDRESS, USDC_ADDRESS);
+  const pool = await HybridPool.deploy(ETH_ADDRESS, USDC_ADDRESS);
   await pool.waitForDeployment();
   
   const poolAddress = await pool.getAddress();
-  console.log("HybridPool deployed to:", poolAddress);
+  console.log("ETH-USDC HybridPool deployed to:", poolAddress);
+
+  // Adresi kaydet
+  const fs = require("fs");
+  fs.writeFileSync(
+    "./src/constants/addresses.ts",
+    `export const POOL_ADDRESS = "${poolAddress}";
+export const ETH_ADDRESS = "${ETH_ADDRESS}";
+export const USDC_ADDRESS = "${USDC_ADDRESS}";`
+  );
 }
 
-deployHybridPool().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-}); 
+deployHybridPool()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  }); 

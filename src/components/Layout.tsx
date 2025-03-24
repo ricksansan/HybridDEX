@@ -1,7 +1,11 @@
-import React from 'react';
-import Navbar from '@/components/Navbar';
+import { ReactNode } from 'react';
+import Navbar from './Navbar';
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+interface LayoutProps {
+  children: ReactNode;
+}
+
+export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-[#0D111C]">
       <Navbar />
@@ -10,6 +14,4 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </main>
     </div>
   );
-};
-
-export default Layout; 
+} 

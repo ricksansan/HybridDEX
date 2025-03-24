@@ -1,46 +1,27 @@
 import React, { useState } from 'react';
 import { ArrowsUpDownIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
-import { useSwap } from '../hooks/useSwap';
-
-type TokenType = 'ETH' | 'USDC';
-
-interface TokenInfo {
-  symbol: string;
-  name: string;
-  icon: string;
-  decimals: number;
-}
-
-const tokens: Record<TokenType, TokenInfo> = {
-  ETH: {
-    symbol: 'ETH',
-    name: 'Ethereum',
-    icon: '/tokens/eth.png',
-    decimals: 18
-  },
-  USDC: {
-    symbol: 'USDC',
-    name: 'USD Coin',
-    icon: '/tokens/usdc.png',
-    decimals: 6
-  }
-};
+import { useSwap } from '@/hooks/useSwap';
+import { TOKENS } from '@/constants/tokens';
+import TokenSelectModal from './TokenSelectModal';
 
 interface TokenButtonProps {
-  token: TokenType;
+  token: string;
   onClick: () => void;
 }
 
 const TokenButton = ({ token, onClick }: TokenButtonProps) => {
+  const tokenInfo = TOKENS[token];
+  
   return (
     <button 
       onClick={onClick}
-      className="flex items-center gap-2 bg-[#1B2131] hover:bg-[#2C3444] px-3 py-2 rounded-full transition-all"
+      className="flex items-center gap-2 bg-[#1B2131] hover:bg-[#2C3444] px-3 py-2 rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105"
+      style={{ background: `linear-gradient(135deg, ${tokenInfo.color}15, transparent)` }}
     >
       <img 
-        src={tokens[token].icon} 
-        alt={tokens[token].name} 
-        className="w-6 h-6 rounded-full"
+        src={tokenInfo.icon} 
+        alt={tokenInfo.name} 
+        className="w-6 h-6"
       />
       <span className="text-white font-medium">{token}</span>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#5D6785]">
@@ -51,10 +32,12 @@ const TokenButton = ({ token, onClick }: TokenButtonProps) => {
 };
 
 const SwapCard = () => {
-  const [fromToken, setFromToken] = useState<TokenType>('ETH');
-  const [toToken, setToToken] = useState<TokenType>('USDC');
+  const [fromToken, setFromToken] = useState('ETH');
+  const [toToken, setToToken] = useState('USDT');
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
+  const [isSelectingFrom, setIsSelectingFrom] = useState(false);
+  const [isSelectingTo, setIsSelectingTo] = useState(false);
 
   const { swap, loading, error } = useSwap();
 
@@ -63,22 +46,6 @@ const SwapCard = () => {
     setToToken(fromToken);
     setFromAmount(toAmount);
     setToAmount(fromAmount);
-  };
-
-  const handleSwap = async () => {
-    if (!fromAmount) return;
-    
-    const success = await swap(
-      fromToken,
-      toToken,
-      fromAmount,
-      0.5 // 0.5% slippage
-    );
-
-    if (success) {
-      setFromAmount('');
-      setToAmount('');
-    }
   };
 
   return (
@@ -106,7 +73,10 @@ const SwapCard = () => {
                 <span className="text-sm text-[#5D6785]">Balance: 0.0</span>
               </div>
               <div className="flex items-center gap-4">
-                <TokenButton token={fromToken} onClick={() => setFromToken(fromToken)} />
+                <TokenButton 
+                  token={fromToken} 
+                  onClick={() => setIsSelectingFrom(true)} 
+                />
                 <input
                   type="number"
                   value={fromAmount}
@@ -119,12 +89,12 @@ const SwapCard = () => {
           </div>
 
           {/* Swap Button */}
-          <div className="flex justify-center -my-2 relative z-10">
-            <button 
+          <div className="px-3 py-1">
+            <button
               onClick={handleSwapTokens}
-              className="bg-[#131A2A] p-2 rounded-xl hover:bg-[#1B2131] transition-all duration-200 border border-[#1B2131] group"
+              className="w-full bg-[#131A2A] hover:bg-[#1B2131] rounded-2xl p-2 transition-all"
             >
-              <ArrowsUpDownIcon className="w-5 h-5 text-[#5D6785] group-hover:text-white transition-colors" />
+              <ArrowsUpDownIcon className="w-6 h-6 text-[#5D6785] mx-auto" />
             </button>
           </div>
 
@@ -136,7 +106,10 @@ const SwapCard = () => {
                 <span className="text-sm text-[#5D6785]">Balance: 0.0</span>
               </div>
               <div className="flex items-center gap-4">
-                <TokenButton token={toToken} onClick={() => setToToken(toToken)} />
+                <TokenButton 
+                  token={toToken} 
+                  onClick={() => setIsSelectingTo(true)} 
+                />
                 <input
                   type="number"
                   value={toAmount}
@@ -148,30 +121,38 @@ const SwapCard = () => {
             </div>
           </div>
 
-          {/* Connect Button */}
+          {/* Swap Button */}
           <div className="p-3">
-            <button 
-              onClick={handleSwap}
-              disabled={loading || !fromAmount}
-              className="w-full bg-[#4C82FB] hover:bg-[#5B8AFF] text-white font-semibold h-14 rounded-2xl transition-all duration-200 disabled:opacity-50"
+            <button
+              onClick={() => swap(fromToken, toToken, fromAmount)}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-[#4C82FB] to-[#8C5FFF] hover:from-[#5B8AFF] hover:to-[#9D6FFF] text-white font-semibold px-6 py-4 rounded-2xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Swapping...' : 'Swap'}
             </button>
           </div>
+
+          {error && (
+            <div className="px-3">
+              <div className="text-red-500 text-sm">{error}</div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Trade Route */}
-      <div className="mt-3 bg-[#0D111C]/90 backdrop-blur-xl rounded-3xl border border-[#1B2131] p-4">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[#5D6785]">Route</span>
-          <div className="flex items-center gap-2">
-            <img src={tokens[fromToken].icon} alt={fromToken} className="w-4 h-4" />
-            <span className="text-[#5D6785]">→</span>
-            <img src={tokens[toToken].icon} alt={toToken} className="w-4 h-4" />
-          </div>
-        </div>
-      </div>
+      {/* Token Seçim Modalları */}
+      <TokenSelectModal
+        isOpen={isSelectingFrom}
+        onClose={() => setIsSelectingFrom(false)}
+        onSelect={setFromToken}
+        selectedToken={fromToken}
+      />
+      <TokenSelectModal
+        isOpen={isSelectingTo}
+        onClose={() => setIsSelectingTo(false)}
+        onSelect={setToToken}
+        selectedToken={toToken}
+      />
     </div>
   );
 };
